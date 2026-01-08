@@ -1,0 +1,28 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Editor / OS files
+.DS_Store
+.vscode/
+
+# Local data outputs
+ufc_rankings_history.csv
+
+# notebook
+ufc_rankings_notebook.ipynb
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Excel temp files
+~$*.xlsx
+
+# Excel rankings history
+ufc_rankings_history.xlsx
