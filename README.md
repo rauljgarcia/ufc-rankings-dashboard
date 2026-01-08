@@ -61,15 +61,12 @@ The ufc_last_updated field is used to determine whether rankings have changed si
 How it works
 
 At a high level:
-UFC rankings page
-        ↓
-Python scraper (requests + BeautifulSoup)
-        ↓
-Parsed and validated rankings table
-        ↓
-Append-only CSV history
-        ↓
-Excel dashboard refresh
+
+1. Fetch the UFC rankings page
+2. Scrape and parse rankings using Python (requests + BeautifulSoup)
+3. Normalize rankings into a structured table
+4. Append new updates to an append-only CSV history
+5. Refresh a print-ready Excel dashboard from the CSV
 
 The script includes sanity checks to avoid writing partial or incorrect data if the page structure changes.
 
@@ -81,12 +78,15 @@ From the project directory:
 python ufc_rankings_update.py
 
 Expected behavior:
-	•	If the UFC has not updated rankings since the last saved snapshot:
-Parsed 195 rows, 13 divisions, UFC updated YYYY-MM-DD
+
+If the UFC has NOT updated rankings since the last saved snapshot:
+
+Parsed 195 rows, 13 divisions, UFC updated YYYY-MM-DD  
 No UFC update since YYYY-MM-DD. Skipping append.
 
-	•	If the UFC has updated rankings:
-Parsed 195 rows, 13 divisions, UFC updated YYYY-MM-DD
+If the UFC HAS updated rankings:
+
+Parsed 195 rows, 13 divisions, UFC updated YYYY-MM-DD  
 Appended 195 rows for UFC update date YYYY-MM-DD.
 
 Excel dashboard usage
