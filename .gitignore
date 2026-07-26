@@ -17,6 +17,7 @@ ufc_rankings_history.csv
 
 # notebook
 ufc_rankings_notebook.ipynb
+Exploring HTML for scraping method.ipynb
 
 # Jupyter
 .ipynb_checkpoints/
@@ -26,3 +27,8 @@ ufc_rankings_notebook.ipynb
 
 # Excel rankings history
 ufc_rankings_history.xlsx
+
+
+# Local Excel working files
+ufc_rankings_dashboard2.xlsx
+ufc_rankings_dashboard_missed_week_manual.xlsx
