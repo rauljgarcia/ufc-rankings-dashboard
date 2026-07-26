@@ -317,11 +317,6 @@ def main():
             f"Expected 165 Meta ranking rows, parsed {df_new.shape[0]}."
         )
 
-    print(df_new["rank_change"].value_counts(dropna=False))
-    print(
-        df_new.groupby("division")["rank"].agg(["min", "max", "count"])
-        )
-
     # Confirm that the exact expected Meta divisions were parsed
     parsed_divisions = set(df_new["division"].unique())
 
@@ -330,8 +325,7 @@ def main():
             f"Unexpected Meta divisions parsed: {sorted(parsed_divisions)}"
         )
 
-    # Temporarily disabled while testing the new Meta parser
-    # append_history(df_new, HISTORY_CSV)
+    append_history(df_new, HISTORY_CSV)
 
 
 if __name__ == "__main__":
