@@ -39,6 +39,20 @@ COLS = [
     "rank_change",
 ]
 
+EXPECTED_DIVISIONS = {
+    "Flyweight",
+    "Bantamweight",
+    "Featherweight",
+    "Lightweight",
+    "Welterweight",
+    "Middleweight",
+    "Light Heavyweight",
+    "Heavyweight",
+    "Women's Strawweight",
+    "Women's Flyweight",
+    "Women's Bantamweight",
+}
+
 
 def fetch_soup(url: str) -> BeautifulSoup:
     """
@@ -61,7 +75,7 @@ def fetch_soup(url: str) -> BeautifulSoup:
 
 def parse_last_updated(soup: BeautifulSoup) -> datetime.date:
     """
-    Parse the UFC page's "Last updated" date.
+    Parse the Meta UFC Rankings “Last updated” date.
 
     The UFC rankings page includes a label like:
         "Last updated: Tuesday, Dec. 16"
@@ -86,9 +100,12 @@ def parse_last_updated(soup: BeautifulSoup) -> datetime.date:
         raise RuntimeError("Could not find last-updated div (list-denotions).")
 
     # get all <p> tags inside it
-    p = last_up_div.find("p")
+    p = last_up_div.find(
+        "p",
+        attrs={"data-rankings-footer": "meta"}
+    )
     if not p:
-        raise RuntimeError("Could not find last-updated <p> tag.")
+        raise RuntimeError("Could not find Meta rankings last-updated <p> tag.")
 
     raw = p.get_text()
 
@@ -138,7 +155,18 @@ def parse_rankings(
     """
 
     # Blocks that hold each weight division/grouping
-    blocks = soup.find_all("div", class_="view-grouping")
+    meta_container = soup.find(
+        "div",
+        class_="view-display-id-meta_rankings"
+    )
+
+    if not meta_container:
+        raise RuntimeError("Could not find Meta UFC Rankings container.")
+
+    blocks = meta_container.find_all(
+        "div",
+        class_="view-grouping"
+    )
 
     # Store all dictionaries/rows in this list
     all_rows = []
@@ -153,7 +181,7 @@ def parse_rankings(
         if not caption:
             continue
 
-        # Access pound-for-pound/Weight divisions
+        # Access division and champion
         h4 = caption.find("h4")
         # Access champion of pound-for-pound/Weight divisions
         h5 = caption.find("h5")
@@ -161,7 +189,7 @@ def parse_rankings(
             continue
 
         # Division name, remove Top Rank suffix
-        division = h4.get_text(" ", strip=True).replace(" Top Rank", "")
+        division = h4.get_text(" ", strip=True)
         # Champion name
         champion = h5.get_text(" ", strip=True)
 
@@ -174,7 +202,7 @@ def parse_rankings(
         # Loop through table rows (tr) in the table body (tr)
         for tr in tbody.find_all("tr"):
             # Access fighter rank
-            rank_td = tr.find("td", class_="views-field-weight-class-rank")
+            rank_td = tr.find("td", class_="views-field-meta-weight-class-rank")
             if not rank_td:
                 continue
             fighter_rank = int(rank_td.get_text(" ", strip=True))
@@ -192,8 +220,8 @@ def parse_rankings(
 
             # Access rank change div
             rank_change_td = tr.find(
-                "td", class_="views-field-weight-class-rank-change"
-            )
+                "td", class_="views-field-meta-weight-class-rank-change"
+                )
 
             # Change labels to either +/-
             rank_change = ""
@@ -268,15 +296,6 @@ def append_history(df_new: pd.DataFrame, history_csv: str):
 
 
 def main():
-    """
-    Orchestrate scraping, parsing, sanity checks, and history persistence.
-
-    Returns:
-        None
-
-    Raises:
-        RuntimeError: If parsing produces an unexpectedly small dataset.
-    """
     soup = fetch_soup(URL)
 
     # Create snapshot date
@@ -285,18 +304,34 @@ def main():
 
     df_new = parse_rankings(soup, snapshot_date, ufc_last_updated)
 
-    # ---- sanity check ----
+    # ---- sanity checks ----
     print(
         f"Parsed {df_new.shape[0]} rows, "
         f"{df_new['division'].nunique()} divisions, "
         f"UFC updated {ufc_last_updated}"
     )
-    if df_new.shape[0] < 150:
+
+    # Expect 11 Meta divisions x 15 ranked fighters = 165 rows
+    if df_new.shape[0] != 165:
         raise RuntimeError(
-            f"Parsed only {df_new.shape[0]} rows — page structure may have changed."
+            f"Expected 165 Meta ranking rows, parsed {df_new.shape[0]}."
         )
 
-    append_history(df_new, HISTORY_CSV)
+    print(df_new["rank_change"].value_counts(dropna=False))
+    print(
+        df_new.groupby("division")["rank"].agg(["min", "max", "count"])
+        )
+
+    # Confirm that the exact expected Meta divisions were parsed
+    parsed_divisions = set(df_new["division"].unique())
+
+    if parsed_divisions != EXPECTED_DIVISIONS:
+        raise RuntimeError(
+            f"Unexpected Meta divisions parsed: {sorted(parsed_divisions)}"
+        )
+
+    # Temporarily disabled while testing the new Meta parser
+    # append_history(df_new, HISTORY_CSV)
 
 
 if __name__ == "__main__":
